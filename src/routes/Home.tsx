@@ -207,7 +207,7 @@ export default function Home() {
               key={step.num} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
               style={{ padding: 28, background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 16, position: 'relative' }}
             >
-              <div style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: 56, fontWeight: 700, color: 'rgba(230,4,18,0.12)', letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 16, fontStyle: 'italic' }}>
+              <div style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: 56, fontWeight: 700, color: 'rgba(230,4,18,0.45)', letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 16, fontStyle: 'italic', textShadow: '0 0 30px rgba(230,4,18,0.3)' }}>
                 {step.num}
               </div>
               <h3 style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: 18, fontWeight: 700, marginBottom: 10, letterSpacing: '-0.01em' }}>{step.title}</h3>
