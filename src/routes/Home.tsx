@@ -160,7 +160,7 @@ export default function Home() {
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 12 : 20 }}>
           {currentGames.map((game, i) => (
-            <motion.div key={game.id} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} variants={fadeUp}>
+            <motion.div key={game.id} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} variants={fadeUp} style={{ minWidth: 0 }}>
               <GameCard game={game} />
             </motion.div>
           ))}

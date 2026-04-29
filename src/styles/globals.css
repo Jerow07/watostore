@@ -186,6 +186,7 @@
     @apply rounded-lg overflow-hidden cursor-pointer transition-all duration-200;
     background: var(--bg-1);
     border: 1px solid var(--border);
+    min-width: 0;
   }
   .game-card:hover {
     transform: translateY(-4px);
