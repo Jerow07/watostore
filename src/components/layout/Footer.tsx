@@ -18,7 +18,7 @@ export default function Footer() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr 1fr' : '1.4fr 1fr 1fr 1fr',
+          gridTemplateColumns: isMobile ? '1fr 1fr' : '1.4fr 1fr 1fr',
           gap: isMobile ? 32 : 48,
           marginBottom: 40,
           maxWidth: 1200,
@@ -52,27 +52,6 @@ export default function Footer() {
           { to: '/terminos', label: 'Términos y condiciones' },
           { to: '/contacto', label: 'Contacto' },
         ]} />
-
-        <div>
-          <h5 style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-3)', marginBottom: 14 }}>
-            Contacto
-          </h5>
-          <div style={{ display: 'grid', gap: 8 }}>
-            {[
-              { href: 'https://wa.me/5491151158409', label: 'WhatsApp' },
-              { href: 'https://instagram.com/watostore', label: 'Instagram' },
-              { href: 'mailto:hola@watostore.ar', label: 'hola@watostore.ar' },
-            ].map((l) => (
-              <a key={l.label} href={l.href} target="_blank" rel="noreferrer"
-                style={{ fontSize: 13, color: 'var(--fg-1)', textDecoration: 'none', transition: 'color 0.15s' }}
-                onMouseEnter={(e) => ((e.target as HTMLAnchorElement).style.color = '#4CC3E3')}
-                onMouseLeave={(e) => ((e.target as HTMLAnchorElement).style.color = '#e5e5ea')}
-              >
-                {l.label}
-              </a>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Social icons */}
