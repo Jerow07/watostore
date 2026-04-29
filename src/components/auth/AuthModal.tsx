@@ -3,23 +3,26 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Eye, EyeOff, Loader2, ArrowLeft, CheckCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
+import { useIsMobile } from '@/hooks/useBreakpoint'
 
 type View = 'login' | 'register' | 'forgot'
 
 export default function AuthModal() {
-  const { authModalOpen, authModalTab, closeAuthModal, openAuthModal } = useAuthStore()
+  const { authModalOpen, authModalTab, closeAuthModal } = useAuthStore()
+  const isMobile = useIsMobile()
 
   const [view, setView] = useState<View>(authModalTab)
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [mobileTab, setMobileTab] = useState<'login' | 'register'>('login')
 
   const [loginForm, setLoginForm] = useState({ email: '', password: '' })
   const [registerForm, setRegisterForm] = useState({ email: '', password: '', name: '' })
   const [forgotEmail, setForgotEmail] = useState('')
 
-  useEffect(() => { setView(authModalTab) }, [authModalTab])
+  useEffect(() => { setView(authModalTab); setMobileTab(authModalTab === 'register' ? 'register' : 'login') }, [authModalTab])
 
   if (!authModalOpen) return null
 
@@ -27,9 +30,7 @@ export default function AuthModal() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault(); reset(); setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({
-      email: loginForm.email, password: loginForm.password,
-    })
+    const { error } = await supabase.auth.signInWithPassword({ email: loginForm.email, password: loginForm.password })
     setLoading(false)
     if (error) { setError(error.message); return }
     closeAuthModal()
@@ -37,11 +38,7 @@ export default function AuthModal() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault(); reset(); setLoading(true)
-    const { error } = await supabase.auth.signUp({
-      email: registerForm.email,
-      password: registerForm.password,
-      options: { data: { full_name: registerForm.name } },
-    })
+    const { error } = await supabase.auth.signUp({ email: registerForm.email, password: registerForm.password, options: { data: { full_name: registerForm.name } } })
     setLoading(false)
     if (error) { setError(error.message); return }
     setSuccess('¡Cuenta creada! Revisá tu email para confirmar.')
@@ -49,9 +46,7 @@ export default function AuthModal() {
 
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault(); reset(); setLoading(true)
-    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, { redirectTo: `${window.location.origin}/reset-password` })
     setLoading(false)
     if (error) { setError(error.message); return }
     setSuccess('¡Listo! Revisá tu email y hacé click en el enlace para restablecer tu contraseña.')
@@ -64,11 +59,7 @@ export default function AuthModal() {
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={closeAuthModal}
-        style={{
-          position: 'fixed', inset: 0, zIndex: 200,
-          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
-          display: 'grid', placeItems: 'center', padding: '0 16px',
-        }}
+        style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center', padding: '0 16px' }}
       >
         <motion.div
           initial={{ opacity: 0, y: 24, scale: 0.97 }}
@@ -77,34 +68,29 @@ export default function AuthModal() {
           transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
           onClick={(e) => e.stopPropagation()}
           style={{
-            width: '100%', maxWidth: isForgot ? 440 : 820,
-            background: 'var(--bg-1)', border: '1px solid var(--border-strong)',
-            borderRadius: 16, overflow: 'hidden',
-            display: 'grid', gridTemplateColumns: isForgot ? '1fr' : '1fr 1fr',
-            position: 'relative', transition: 'max-width 0.25s',
+            width: '100%',
+            maxWidth: isForgot ? 440 : (isMobile ? 400 : 820),
+            background: 'var(--bg-1)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 16,
+            overflow: 'hidden',
+            display: 'grid',
+            gridTemplateColumns: (!isForgot && !isMobile) ? '1fr 1fr' : '1fr',
+            position: 'relative',
           }}
         >
-          <button onClick={closeAuthModal} style={{
-            position: 'absolute', top: 16, right: 16, width: 32, height: 32,
-            borderRadius: 8, background: 'var(--bg-2)', border: '1px solid var(--border)',
-            display: 'grid', placeItems: 'center', color: 'var(--fg-2)', cursor: 'pointer', zIndex: 1,
-          }}>
+          <button onClick={closeAuthModal} style={{ position: 'absolute', top: 16, right: 16, width: 32, height: 32, borderRadius: 8, background: 'var(--bg-2)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', color: 'var(--fg-2)', cursor: 'pointer', zIndex: 1 }}>
             <X size={16} />
           </button>
 
           {/* ── FORGOT PASSWORD ── */}
           {isForgot && (
             <div style={{ padding: '40px 36px' }}>
-              <button onClick={() => { setView('login'); reset() }}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--fg-3)', cursor: 'pointer', fontSize: 13, padding: 0, marginBottom: 24 }}>
+              <button onClick={() => { setView('login'); reset() }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--fg-3)', cursor: 'pointer', fontSize: 13, padding: 0, marginBottom: 24 }}>
                 <ArrowLeft size={14} /> Volver
               </button>
-              <h2 style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
-                Olvidé mi contraseña
-              </h2>
-              <p style={{ fontSize: 14, color: 'var(--fg-3)', marginBottom: 24, lineHeight: 1.6 }}>
-                Ingresá tu email y te mandamos un enlace para restablecer tu contraseña.
-              </p>
+              <h2 style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Olvidé mi contraseña</h2>
+              <p style={{ fontSize: 14, color: 'var(--fg-3)', marginBottom: 24, lineHeight: 1.6 }}>Ingresá tu email y te mandamos un enlace para restablecer tu contraseña.</p>
               {success ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '24px 0', textAlign: 'center' }}>
                   <CheckCircle size={40} style={{ color: '#4ade80' }} />
@@ -115,8 +101,7 @@ export default function AuthModal() {
                 <form onSubmit={handleForgot} style={{ display: 'grid', gap: 14 }}>
                   <div>
                     <label style={labelStyle}>Correo electrónico *</label>
-                    <input className="wato-input" type="email" required placeholder="tu@mail.com"
-                      value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} />
+                    <input className="wato-input" type="email" required placeholder="tu@mail.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} />
                   </div>
                   {error && <p style={{ color: '#E60412', fontSize: 13 }}>{error}</p>}
                   <button className="btn-primary" type="submit" disabled={loading}>
@@ -127,26 +112,87 @@ export default function AuthModal() {
             </div>
           )}
 
-          {/* ── LOGIN ── */}
-          {!isForgot && (
+          {/* ── MOBILE: tabs login/register ── */}
+          {!isForgot && isMobile && (
+            <div style={{ padding: '40px 24px 32px' }}>
+              {/* Tab switcher */}
+              <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 10, marginBottom: 28 }}>
+                {(['login', 'register'] as const).map((tab) => (
+                  <button key={tab} onClick={() => { setMobileTab(tab); reset() }}
+                    style={{ flex: 1, padding: '9px 0', fontSize: 13, fontWeight: 600, borderRadius: 6, border: 'none', cursor: 'pointer', background: mobileTab === tab ? '#E60412' : 'transparent', color: mobileTab === tab ? 'white' : '#989898', transition: 'all 0.15s', fontFamily: 'inherit' }}
+                  >
+                    {tab === 'login' ? 'Iniciar sesión' : 'Registrarme'}
+                  </button>
+                ))}
+              </div>
+
+              {mobileTab === 'login' ? (
+                <>
+                  <form onSubmit={handleLogin} style={{ display: 'grid', gap: 14 }}>
+                    <div>
+                      <label style={labelStyle}>Correo electrónico *</label>
+                      <input className="wato-input" type="email" required placeholder="tu@mail.com" value={loginForm.email} onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Contraseña *</label>
+                      <div style={{ position: 'relative' }}>
+                        <input className="wato-input" type={showPass ? 'text' : 'password'} required placeholder="••••••••" style={{ paddingRight: 40 }} value={loginForm.password} onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))} />
+                        <button type="button" onClick={() => setShowPass((v) => !v)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg-3)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                          {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
+                    {error && <p style={{ color: '#E60412', fontSize: 13 }}>{error}</p>}
+                    <button className="btn-primary" type="submit" disabled={loading} style={{ marginTop: 4 }}>
+                      {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : 'Iniciar sesión'}
+                    </button>
+                    <button type="button" onClick={() => { setView('forgot'); reset() }} style={{ fontSize: 13, color: 'var(--fg-3)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}>
+                      ¿Olvidaste la contraseña?
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <form onSubmit={handleRegister} style={{ display: 'grid', gap: 14 }}>
+                  <div>
+                    <label style={labelStyle}>Nombre completo *</label>
+                    <input className="wato-input" type="text" required placeholder="Tu nombre" value={registerForm.name} onChange={(e) => setRegisterForm((f) => ({ ...f, name: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Correo electrónico *</label>
+                    <input className="wato-input" type="email" required placeholder="tu@mail.com" value={registerForm.email} onChange={(e) => setRegisterForm((f) => ({ ...f, email: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Contraseña *</label>
+                    <input className="wato-input" type="password" required placeholder="Mínimo 6 caracteres" value={registerForm.password} onChange={(e) => setRegisterForm((f) => ({ ...f, password: e.target.value }))} />
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--fg-3)', lineHeight: 1.6 }}>
+                    Tus datos se usarán según nuestros{' '}
+                    <a href="/terminos" style={{ color: 'var(--wato-cyan)' }}>términos y condiciones</a>.
+                  </p>
+                  {error && <p style={{ color: '#E60412', fontSize: 13 }}>{error}</p>}
+                  {success && <p style={{ color: '#4ade80', fontSize: 13 }}>{success}</p>}
+                  <button className="btn-primary" type="submit" disabled={loading || !!success} style={{ marginTop: 4 }}>
+                    {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : 'Registrarme'}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* ── DESKTOP: LOGIN ── */}
+          {!isForgot && !isMobile && (
             <div style={{ padding: '40px 36px', borderRight: '1px solid var(--border)' }}>
-              <h2 style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: 26, fontWeight: 700, marginBottom: 24 }}>
-                Iniciar sesión
-              </h2>
+              <h2 style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: 26, fontWeight: 700, marginBottom: 24 }}>Iniciar sesión</h2>
               <form onSubmit={handleLogin} style={{ display: 'grid', gap: 14 }}>
                 <div>
                   <label style={labelStyle}>Correo electrónico *</label>
-                  <input className="wato-input" type="email" required placeholder="tu@mail.com"
-                    value={loginForm.email} onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))} />
+                  <input className="wato-input" type="email" required placeholder="tu@mail.com" value={loginForm.email} onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))} />
                 </div>
                 <div>
                   <label style={labelStyle}>Contraseña *</label>
                   <div style={{ position: 'relative' }}>
-                    <input className="wato-input" type={showPass ? 'text' : 'password'} required
-                      placeholder="••••••••" style={{ paddingRight: 40 }}
-                      value={loginForm.password} onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))} />
-                    <button type="button" onClick={() => setShowPass((v) => !v)}
-                      style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg-3)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    <input className="wato-input" type={showPass ? 'text' : 'password'} required placeholder="••••••••" style={{ paddingRight: 40 }} value={loginForm.password} onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))} />
+                    <button type="button" onClick={() => setShowPass((v) => !v)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg-3)', background: 'none', border: 'none', cursor: 'pointer' }}>
                       {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
@@ -155,35 +201,29 @@ export default function AuthModal() {
                 <button className="btn-primary" type="submit" disabled={loading} style={{ marginTop: 4 }}>
                   {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : 'Iniciar sesión'}
                 </button>
-                <button type="button" onClick={() => { setView('forgot'); reset() }}
-                  style={{ fontSize: 13, color: 'var(--fg-3)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}>
+                <button type="button" onClick={() => { setView('forgot'); reset() }} style={{ fontSize: 13, color: 'var(--fg-3)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}>
                   ¿Olvidaste la contraseña?
                 </button>
               </form>
             </div>
           )}
 
-          {/* ── REGISTER ── */}
-          {!isForgot && (
+          {/* ── DESKTOP: REGISTER ── */}
+          {!isForgot && !isMobile && (
             <div style={{ padding: '40px 36px' }}>
-              <h2 style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: 26, fontWeight: 700, marginBottom: 24 }}>
-                Registrarme
-              </h2>
+              <h2 style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: 26, fontWeight: 700, marginBottom: 24 }}>Registrarme</h2>
               <form onSubmit={handleRegister} style={{ display: 'grid', gap: 14 }}>
                 <div>
                   <label style={labelStyle}>Nombre completo *</label>
-                  <input className="wato-input" type="text" required placeholder="Tu nombre"
-                    value={registerForm.name} onChange={(e) => setRegisterForm((f) => ({ ...f, name: e.target.value }))} />
+                  <input className="wato-input" type="text" required placeholder="Tu nombre" value={registerForm.name} onChange={(e) => setRegisterForm((f) => ({ ...f, name: e.target.value }))} />
                 </div>
                 <div>
                   <label style={labelStyle}>Correo electrónico *</label>
-                  <input className="wato-input" type="email" required placeholder="tu@mail.com"
-                    value={registerForm.email} onChange={(e) => setRegisterForm((f) => ({ ...f, email: e.target.value }))} />
+                  <input className="wato-input" type="email" required placeholder="tu@mail.com" value={registerForm.email} onChange={(e) => setRegisterForm((f) => ({ ...f, email: e.target.value }))} />
                 </div>
                 <div>
                   <label style={labelStyle}>Contraseña *</label>
-                  <input className="wato-input" type="password" required placeholder="Mínimo 6 caracteres"
-                    value={registerForm.password} onChange={(e) => setRegisterForm((f) => ({ ...f, password: e.target.value }))} />
+                  <input className="wato-input" type="password" required placeholder="Mínimo 6 caracteres" value={registerForm.password} onChange={(e) => setRegisterForm((f) => ({ ...f, password: e.target.value }))} />
                 </div>
                 <p style={{ fontSize: 12, color: 'var(--fg-3)', lineHeight: 1.6 }}>
                   Tus datos se usarán para procesar tu pedido según nuestros{' '}
@@ -204,8 +244,6 @@ export default function AuthModal() {
 }
 
 const labelStyle: React.CSSProperties = {
-  fontSize: 11, color: 'var(--fg-2)',
-  fontFamily: 'JetBrains Mono, monospace',
-  textTransform: 'uppercase', letterSpacing: '0.1em',
-  display: 'block', marginBottom: 6,
+  fontSize: 11, color: 'var(--fg-2)', fontFamily: 'JetBrains Mono, monospace',
+  textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 6,
 }
