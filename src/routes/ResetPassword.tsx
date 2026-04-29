@@ -14,14 +14,25 @@ export default function ResetPassword() {
   const [validSession, setValidSession] = useState(false)
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    // Cover all Supabase auth flows (implicit hash, PKCE code, already-processed session)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') setValidSession(true)
+      // PKCE flow sometimes fires SIGNED_IN when coming from a recovery link
+      if (event === 'SIGNED_IN' && session) setValidSession(true)
     })
 
-    // If Supabase already processed the hash before this component mounted
+    // Session already established before component mounted
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) setValidSession(true)
     })
+
+    // PKCE: exchange code from URL if present (detectSessionInUrl may not have run yet)
+    const code = new URLSearchParams(window.location.search).get('code')
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+        if (!error && data.session) setValidSession(true)
+      })
+    }
 
     return () => subscription.unsubscribe()
   }, [])
