@@ -14,10 +14,16 @@ export default function ResetPassword() {
   const [validSession, setValidSession] = useState(false)
 
   useEffect(() => {
-    // Supabase pone los tokens en el hash al redirigir
-    supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') setValidSession(true)
     })
+
+    // If Supabase already processed the hash before this component mounted
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setValidSession(true)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
