@@ -9,9 +9,9 @@ import { useIsMobile } from '@/hooks/useBreakpoint'
 import gamesData from '@/data/games.json'
 
 const games = gamesData as Game[]
-const topWeek = games.filter((g) => g.tags.includes('top-week')).slice(0, 4)
-const topMonth = games.filter((g) => g.tags.includes('top-month')).slice(0, 4)
-const newGames = games.filter((g) => g.tags.includes('new')).slice(0, 4)
+const topWeek = games.filter((g) => g.tags.includes('top-week')).slice(0, 8)
+const topMonth = games.filter((g) => g.tags.includes('top-month')).slice(0, 8)
+const newGames = games.filter((g) => g.tags.includes('new')).slice(0, 8)
 
 const TABS = [
   { id: 'week', label: 'Esta semana', data: topWeek },
