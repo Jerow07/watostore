@@ -2,6 +2,7 @@ import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect } from 'react'
 import Header from '@/components/layout/Header'
+import { useGamesStore } from '@/store/gamesStore'
 import Footer from '@/components/layout/Footer'
 import CartDrawer from '@/components/cart/CartDrawer'
 import AuthModal from '@/components/auth/AuthModal'
@@ -17,6 +18,8 @@ import FAQ from '@/routes/FAQ'
 import Terms from '@/routes/Terms'
 import Contact from '@/routes/Contact'
 import ResetPassword from '@/routes/ResetPassword'
+import CheckoutExito from '@/routes/CheckoutExito'
+import Admin from '@/routes/Admin'
 
 function PageTransition({ children }: { children: React.ReactNode }) {
   return (
@@ -34,10 +37,13 @@ function PageTransition({ children }: { children: React.ReactNode }) {
 export default function App() {
   const location = useLocation()
   const { dark } = useThemeStore()
+  const loadGames = useGamesStore((s) => s.loadGames)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
   }, [dark])
+
+  useEffect(() => { loadGames() }, [loadGames])
 
   // Scroll to top on route change
   useEffect(() => {
@@ -66,6 +72,10 @@ export default function App() {
               <Route path="/terminos" element={<PageTransition><Terms /></PageTransition>} />
               <Route path="/contacto" element={<PageTransition><Contact /></PageTransition>} />
               <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
+              <Route path="/checkout/exito" element={<PageTransition><CheckoutExito /></PageTransition>} />
+              <Route path="/checkout/error" element={<PageTransition><CheckoutExito /></PageTransition>} />
+              <Route path="/checkout/pendiente" element={<PageTransition><CheckoutExito /></PageTransition>} />
+              <Route path="/admin" element={<PageTransition><Admin /></PageTransition>} />
               <Route
                 path="*"
                 element={

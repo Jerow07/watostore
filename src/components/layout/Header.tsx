@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Search, Heart, ShoppingCart, User, X, Menu } from 'lucide-react'
+import { Search, Heart, ShoppingCart, User, X, Menu, ShieldCheck } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCartStore } from '@/store/cartStore'
 import { useWishlistStore } from '@/store/wishlistStore'
 import { useAuthStore } from '@/store/authStore'
 import { useIsMobile } from '@/hooks/useBreakpoint'
 import watoLogo from '@/assets/brand/wato-logo.png'
+import { STORE_CONFIG } from '@/config/store'
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
@@ -154,6 +155,12 @@ export default function Header() {
               </button>
             )}
 
+            {user?.email === STORE_CONFIG.adminEmail && (
+              <Link to="/admin" className="btn-icon" title="Admin" style={{ textDecoration: 'none', display: 'grid', placeItems: 'center', color: '#E60412' }}>
+                <ShieldCheck size={18} />
+              </Link>
+            )}
+
             <button className="btn-icon" onClick={openCart} title="Carrito" style={{ position: 'relative' }}>
               <ShoppingCart size={18} />
               {cartCount > 0 && (
@@ -163,16 +170,14 @@ export default function Header() {
               )}
             </button>
 
-            {!isMobile && (
-              user ? (
-                <Link to="/perfil" className="btn-icon" title="Mi cuenta" style={{ textDecoration: 'none', display: 'grid', placeItems: 'center' }}>
-                  <User size={18} />
-                </Link>
-              ) : (
-                <button className="btn-icon" title="Iniciar sesión" onClick={() => openAuthModal('login')}>
-                  <User size={18} />
-                </button>
-              )
+            {user ? (
+              <Link to="/perfil" className="btn-icon" title="Mi cuenta" style={{ textDecoration: 'none', display: 'grid', placeItems: 'center' }}>
+                <User size={18} />
+              </Link>
+            ) : (
+              <button className="btn-icon" title="Iniciar sesión" onClick={() => openAuthModal('login')}>
+                <User size={18} />
+              </button>
             )}
 
             {/* Hamburger — mobile only */}

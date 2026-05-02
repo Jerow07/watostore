@@ -4,9 +4,11 @@ import { Link } from 'react-router-dom'
 import { useCartStore } from '@/store/cartStore'
 import { useIsMobile } from '@/hooks/useBreakpoint'
 import { formatPriceARS } from '@/lib/format'
+import { useGamesStore } from '@/store/gamesStore'
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQty, totalPrice, totalItems } = useCartStore()
+  const allGames = useGamesStore((s) => s.games)
   const isMobile = useIsMobile()
   const total = totalPrice()
   const count = totalItems()
@@ -64,12 +66,17 @@ export default function CartDrawer() {
                 </div>
               ) : (
                 <>
-                  {items.map((item) => (
+                  {items.map((item) => {
+                    const gameData = allGames.find(g => g.id === item.gameId)
+                    const cover = gameData?.cover
+                    const maxQty = gameData?.stock?.[item.accountType] ?? 1
+                    const atMax = item.qty >= maxQty
+                    return (
                     <div
                       key={`${item.gameId}-${item.accountType}`}
                       style={{ display: 'grid', gridTemplateColumns: '56px 1fr auto', gap: 12, alignItems: 'center', padding: 14, background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 10 }}
                     >
-                      <div style={{ width: 56, height: 56, borderRadius: 8, background: 'var(--bg-3)', backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0, rgba(255,255,255,0.04) 4px, transparent 4px, transparent 8px)' }} />
+                      <img src={cover} alt={item.title} style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', display: 'block', background: 'var(--bg-3)' }} />
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
                         <span style={{ display: 'inline-block', fontFamily: 'JetBrains Mono, monospace', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '2px 6px', borderRadius: 3, background: item.accountType === 'primary' ? 'rgba(230,4,18,0.15)' : 'rgba(76,195,227,0.15)', color: item.accountType === 'primary' ? '#F14555' : '#4CC3E3', marginBottom: 6 }}>
@@ -80,7 +87,11 @@ export default function CartDrawer() {
                             <Minus size={11} />
                           </button>
                           <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, minWidth: 20, textAlign: 'center' }}>{item.qty}</span>
-                          <button onClick={() => updateQty(item.gameId, item.accountType, item.qty + 1)} style={{ width: 22, height: 22, borderRadius: 4, background: 'var(--bg-3)', border: 'none', color: 'var(--fg-0)', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+                          <button
+                            onClick={() => { if (!atMax) updateQty(item.gameId, item.accountType, item.qty + 1) }}
+                            disabled={atMax}
+                            style={{ width: 22, height: 22, borderRadius: 4, background: 'var(--bg-3)', border: 'none', color: atMax ? 'var(--fg-3)' : 'var(--fg-0)', cursor: atMax ? 'not-allowed' : 'pointer', display: 'grid', placeItems: 'center', opacity: atMax ? 0.4 : 1 }}
+                          >
                             <Plus size={11} />
                           </button>
                         </div>
@@ -94,12 +105,7 @@ export default function CartDrawer() {
                         </button>
                       </div>
                     </div>
-                  ))}
-                  {items.length === 1 && (
-                    <div style={{ padding: 14, border: '1px dashed rgba(76,195,227,0.3)', borderRadius: 10, background: 'rgba(76,195,227,0.04)', fontSize: 12, color: '#4CC3E3', fontFamily: 'JetBrains Mono, monospace', textAlign: 'center', letterSpacing: '0.05em' }}>
-                      + Agregá un juego más y obtené <strong>10% off</strong>
-                    </div>
-                  )}
+                  )})}
                 </>
               )}
             </div>

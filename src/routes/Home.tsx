@@ -6,18 +6,7 @@ import GameCard from '@/components/product/GameCard'
 import type { Game } from '@/components/product/GameCard'
 import SwitchVideoBg from '@/components/background/SwitchVideoBg'
 import { useIsMobile } from '@/hooks/useBreakpoint'
-import gamesData from '@/data/games.json'
-
-const games = gamesData as Game[]
-const topWeek = games.filter((g) => g.tags.includes('top-week')).slice(0, 8)
-const topMonth = games.filter((g) => g.tags.includes('top-month')).slice(0, 8)
-const newGames = games.filter((g) => g.tags.includes('new')).slice(0, 8)
-
-const TABS = [
-  { id: 'week', label: 'Esta semana', data: topWeek },
-  { id: 'month', label: 'Top mes', data: topMonth },
-  { id: 'new', label: 'Nuevos', data: newGames },
-]
+import { useGamesStore } from '@/store/gamesStore'
 
 const CATEGORIES = [
   { label: 'Aventura', icon: <Gamepad2 size={20} />, count: 142 },
@@ -45,6 +34,15 @@ const fadeUp = {
 export default function Home() {
   const [activeTab, setActiveTab] = useState('week')
   const isMobile = useIsMobile()
+  const games = useGamesStore((s) => s.games)
+  const topWeek = games.filter((g) => g.tags.includes('top-week')).slice(0, 8)
+  const topMonth = games.filter((g) => g.tags.includes('top-month')).slice(0, 8)
+  const newGames = games.filter((g) => g.tags.includes('new')).slice(0, 8)
+  const TABS = [
+    { id: 'week', label: 'Esta semana', data: topWeek },
+    { id: 'month', label: 'Top mes', data: topMonth },
+    { id: 'new', label: 'Nuevos', data: newGames },
+  ]
   const currentGames = TABS.find((t) => t.id === activeTab)?.data ?? topWeek
 
   const px = isMobile ? 20 : 48
@@ -89,16 +87,16 @@ export default function Home() {
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
           style={{ fontSize: isMobile ? 15 : 18, color: 'var(--fg-3)', lineHeight: 1.55, maxWidth: 500, marginBottom: 40 }}
         >
-          Más de 800 títulos para tu consola híbrida. Cuentas primarias y secundarias verificadas, soporte 24/7 y precios que rompen.
+          Más de 260 títulos para tu consola híbrida. Cuentas primarias y secundarias verificadas, soporte 24/7 y precios que rompen.
         </motion.p>
 
         <motion.div
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
           style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12, justifyContent: 'center', width: isMobile ? '100%' : 'auto', maxWidth: isMobile ? 320 : 'none' }}
         >
-          <Link to="/catalogo" className="btn-primary" style={{ textDecoration: 'none', gap: 10, justifyContent: 'center' }}>
+          <button onClick={() => document.getElementById('featured')?.scrollIntoView({ behavior: 'smooth' })} className="btn-primary" style={{ gap: 10, justifyContent: 'center' }}>
             Explorar catálogo <ArrowRight size={16} />
-          </Link>
+          </button>
           <Link to="/faq" className="btn-ghost" style={{ textDecoration: 'none', gap: 10, justifyContent: 'center' }}>
             <Play size={14} fill="currentColor" /> Cómo funciona
           </Link>
@@ -119,8 +117,8 @@ export default function Home() {
           }}
         >
           {[
-            { num: '800', unit: '+', label: 'Títulos disponibles' },
-            { num: '12k', unit: '+', label: 'Pedidos completados' },
+            { num: '260', unit: '+', label: 'Títulos disponibles' },
+            { num: '6k', unit: '+', label: 'Pedidos completados' },
             { num: '24', unit: '/7', label: 'Soporte humano' },
             { num: '4.9', unit: '/5', label: 'Reseñas verificadas' },
           ].map((s) => (
@@ -137,7 +135,7 @@ export default function Home() {
       </section>
 
       {/* ===== LO MÁS ALQUILADO ===== */}
-      <section style={{ padding: `64px ${px}px 48px`, borderTop: '1px solid var(--border)', position: 'relative', zIndex: 1 }}>
+      <section id="featured" style={{ padding: `64px ${px}px 48px`, borderTop: '1px solid var(--border)', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'flex-end', justifyContent: 'space-between', gap: isMobile ? 16 : 0, marginBottom: 32 }}>
           <div>
             <p className="section-eyebrow"><span className="section-num">/01</span> Lo más alquilado</p>

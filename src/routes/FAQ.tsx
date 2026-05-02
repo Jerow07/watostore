@@ -23,7 +23,7 @@ export default function FAQ() {
         style={{
           position: 'fixed',
           inset: 0,
-          zIndex: 2,
+          zIndex: 0,
           backgroundImage: 'url(/assets/fondo-faq.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -33,6 +33,7 @@ export default function FAQ() {
           pointerEvents: 'none',
         }}
       />
+      <div style={{ position: 'relative', zIndex: 10 }}>
       {/* Hero */}
       <div
         style={{
@@ -215,6 +216,7 @@ export default function FAQ() {
             Escribinos por WhatsApp
           </a>
         </div>
+      </div>
       </div>
     </div>
   )

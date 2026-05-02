@@ -1,18 +1,18 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Heart, ShoppingCart, Zap, Shield, Clock, Star, ChevronRight } from 'lucide-react'
+import { Heart, ShoppingCart, Zap, Shield, Clock, Star, ChevronRight, Share2, Check, Bell, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import GameCard from '@/components/product/GameCard'
 import type { Game } from '@/components/product/GameCard'
-import gamesData from '@/data/games.json'
+import { useGamesStore } from '@/store/gamesStore'
 import { useCartStore } from '@/store/cartStore'
 import { useWishlistStore } from '@/store/wishlistStore'
 import { useIsMobile } from '@/hooks/useBreakpoint'
 import { formatPriceARS } from '@/lib/format'
-
-const ALL_GAMES = gamesData as Game[]
+import { supabase } from '@/lib/supabase'
 
 export default function Product() {
+  const ALL_GAMES = useGamesStore((s) => s.games)
   const { slug } = useParams<{ slug: string }>()
   const game = ALL_GAMES.find((g) => g.slug === slug)
   const [accountType, setAccountType] = useState<'primary' | 'secondary'>('primary')
@@ -23,6 +23,27 @@ export default function Product() {
   const openCart = useCartStore((s) => s.openCart)
   const { toggle, has } = useWishlistStore()
   const inWishlist = game ? has(game.id) : false
+  const [copied, setCopied] = useState(false)
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const [notifyEmail, setNotifyEmail] = useState('')
+  const [notifySubmitted, setNotifySubmitted] = useState(false)
+  const [notifyLoading, setNotifyLoading] = useState(false)
+  const handleNotify = async () => {
+    if (!notifyEmail || !game) return
+    setNotifyLoading(true)
+    await supabase.from('availability_notifications').insert({
+      game_id: game.id,
+      game_title: game.title,
+      email: notifyEmail,
+    })
+    setNotifyLoading(false)
+    setNotifySubmitted(true)
+  }
 
   if (!game) {
     return (
@@ -66,20 +87,9 @@ export default function Product() {
 
         {/* Main grid — stack on mobile */}
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.1fr 1fr', gap: isMobile ? 24 : 56, marginBottom: 64 }}>
-          {/* Gallery */}
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '56px 1fr' : '72px 1fr', gap: isMobile ? 10 : 14 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} style={{ aspectRatio: '1', borderRadius: 8, background: 'var(--bg-3)', border: `1.5px solid ${i === 0 ? '#E60412' : 'var(--border)'}`, cursor: 'pointer', overflow: 'hidden' }}>
-                  <div style={{ width: '100%', height: '100%', backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0, rgba(255,255,255,0.04) 4px, transparent 4px, transparent 8px)' }} />
-                </div>
-              ))}
-            </div>
-            <div style={{ aspectRatio: '16/10', borderRadius: 14, background: 'var(--bg-2)', border: '1px solid var(--border)', overflow: 'hidden', position: 'relative', display: 'grid', placeItems: 'center' }}>
-              <div style={{ width: '100%', height: '100%', backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0, rgba(255,255,255,0.04) 12px, transparent 12px, transparent 24px), radial-gradient(ellipse at center, rgba(230,4,18,0.15), transparent 70%)', display: 'grid', placeItems: 'center' }}>
-                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>cover art</span>
-              </div>
-            </div>
+          {/* Cover */}
+          <div style={{ aspectRatio: '3/4', borderRadius: 14, overflow: 'hidden', background: 'var(--bg-2)', border: '1px solid var(--border)' }}>
+            <img src={game.cover} alt={game.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
 
           {/* Info */}
@@ -131,12 +141,43 @@ export default function Product() {
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-              <button onClick={handleAddToCart} className="btn-primary" style={{ flex: 1, justifyContent: 'center', padding: '14px', fontSize: 15 }}>
-                <ShoppingCart size={17} /> Agregar al carrito
-              </button>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+              {game.stock[accountType] === 0 ? (
+                notifySubmitted ? (
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '14px 18px', borderRadius: 10, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.3)', color: '#4ade80', fontSize: 14, fontWeight: 500 }}>
+                    <Check size={16} /> Te avisamos cuando esté disponible
+                  </div>
+                ) : (
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 8 }}>
+                    <input
+                      type="email"
+                      placeholder="tu@email.com"
+                      value={notifyEmail}
+                      onChange={(e) => setNotifyEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleNotify()}
+                      style={{ flex: 1, minWidth: 0, padding: '0 14px', height: 50, borderRadius: 10, background: 'var(--bg-2)', border: '1px solid var(--border-strong)', color: 'var(--fg-0)', fontSize: 14, fontFamily: 'inherit', outline: 'none' }}
+                    />
+                    <button
+                      onClick={handleNotify}
+                      disabled={notifyLoading || !notifyEmail}
+                      className="btn-primary"
+                      style={{ padding: '0 18px', height: 50, flexShrink: 0, gap: 7, opacity: !notifyEmail ? 0.5 : 1 }}
+                    >
+                      {notifyLoading ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Bell size={15} />}
+                      Avisarme
+                    </button>
+                  </div>
+                )
+              ) : (
+                <button onClick={handleAddToCart} className="btn-primary" style={{ flex: 1, justifyContent: 'center', padding: '14px', fontSize: 15 }}>
+                  <ShoppingCart size={17} /> Agregar al carrito
+                </button>
+              )}
               <button onClick={() => toggle(game.id)} className="btn-icon" style={{ width: 50, height: 50, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-strong)', color: inWishlist ? '#E60412' : '#e5e5ea', flexShrink: 0 }}>
                 <Heart size={18} fill={inWishlist ? '#E60412' : 'none'} stroke={inWishlist ? '#E60412' : 'currentColor'} />
+              </button>
+              <button onClick={handleShare} className="btn-icon" title="Copiar link" style={{ width: 50, height: 50, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-strong)', color: copied ? '#4ade80' : '#e5e5ea', flexShrink: 0, transition: 'color 0.2s' }}>
+                {copied ? <Check size={18} /> : <Share2 size={18} />}
               </button>
             </div>
 

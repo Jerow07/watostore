@@ -180,6 +180,21 @@
     box-shadow: 0 0 6px #fbbf24;
     animation: pulseDot 1.6s ease-in-out infinite;
   }
+  .badge-stock-out {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider font-mono;
+    background: rgba(230,4,18,0.12);
+    color: #F14555;
+    border: 1px solid rgba(230,4,18,0.35);
+    backdrop-filter: blur(8px);
+  }
+  .badge-stock-out::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #E60412;
+    border: 1px solid rgba(230,4,18,0.5);
+  }
 
   /* Game card */
   .game-card {

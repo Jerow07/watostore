@@ -4,12 +4,11 @@ import { Heart, User, LogOut, ShoppingBag, Download, MapPin, LayoutDashboard, Pe
 import { motion, AnimatePresence } from 'framer-motion'
 import GameCard from '@/components/product/GameCard'
 import type { Game } from '@/components/product/GameCard'
-import gamesData from '@/data/games.json'
+import { useGamesStore } from '@/store/gamesStore'
 import { useWishlistStore } from '@/store/wishlistStore'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
-
-const ALL_GAMES = gamesData as Game[]
+import { useIsMobile } from '@/hooks/useBreakpoint'
 
 interface ProfileData {
   full_name: string
@@ -21,9 +20,17 @@ interface ProfileData {
   country: string
 }
 
+interface OrderItem {
+  gameId: string
+  title: string
+  accountType: 'primary' | 'secondary'
+  price: number
+  qty: number
+}
+
 interface Order {
   id: string
-  items: { title: string; type: string }[]
+  items: OrderItem[]
   total: number
   status: string
   created_at: string
@@ -46,7 +53,8 @@ const EMPTY_PROFILE: ProfileData = {
 export default function Profile() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
-  const { user, signOut, openAuthModal } = useAuthStore()
+  const { user, signOut, openAuthModal, loading: authLoading } = useAuthStore()
+  const isMobile = useIsMobile()
 
   const [tab, setTab] = useState(params.get('tab') ?? 'dashboard')
   const [profile, setProfile] = useState<ProfileData>(EMPTY_PROFILE)
@@ -58,16 +66,18 @@ export default function Profile() {
   const [saved, setSaved] = useState(false)
   const [loadingProfile, setLoadingProfile] = useState(true)
 
+  const ALL_GAMES = useGamesStore((s) => s.games)
   const { ids } = useWishlistStore()
   const wishlistGames = ALL_GAMES.filter((g) => ids.includes(g.id))
 
-  // Redirect if not logged in
+  // Redirect if not logged in (wait for auth to resolve first)
   useEffect(() => {
+    if (authLoading) return
     if (!user) {
       navigate('/')
       openAuthModal('login')
     }
-  }, [user, navigate, openAuthModal])
+  }, [user, authLoading, navigate, openAuthModal])
 
   // Load profile + orders from Supabase
   useEffect(() => {
@@ -77,7 +87,7 @@ export default function Profile() {
 
       const [{ data: prof }, { data: ord }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', user.id).single(),
-        supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('orders').select('*').eq('customer_email', user.email).order('created_at', { ascending: false }),
       ])
 
       if (prof) {
@@ -142,20 +152,38 @@ export default function Profile() {
     padding: '12px 16px', borderRadius: 0, fontSize: 14,
     color: tab === id ? '#E60412' : 'var(--fg-1)',
     background: 'transparent', border: 'none',
-    borderLeft: `2px solid ${tab === id ? '#E60412' : 'transparent'}`,
+    borderLeft: !isMobile ? `2px solid ${tab === id ? '#E60412' : 'transparent'}` : 'none',
+    borderBottom: isMobile ? `2px solid ${tab === id ? '#E60412' : 'transparent'}` : 'none',
     cursor: 'pointer' as const, fontFamily: 'inherit',
-    textAlign: 'left' as const, width: '100%',
+    textAlign: 'left' as const, width: isMobile ? 'auto' : '100%',
     transition: 'all 0.15s', fontWeight: tab === id ? 600 : 400,
+    whiteSpace: 'nowrap' as const,
   })
 
+  if (authLoading) return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}><Loader2 size={28} style={{ color: 'var(--fg-3)', animation: 'spin 1s linear infinite' }} /></div>
   if (!user) return null
 
   return (
     <div style={{ paddingTop: 64, position: 'relative', zIndex: 1, minHeight: '100vh' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', maxWidth: 1200, margin: '0 auto', minHeight: 'calc(100vh - 64px)' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', maxWidth: 1200, margin: '0 auto', minHeight: 'calc(100vh - 64px)', position: 'relative' }}>
+        <img
+          src="/assets/pikachu-sidebar.png"
+          alt=""
+          draggable={false}
+          style={{
+            position: 'absolute',
+            top: '30%',
+            left: -220,
+            transform: 'translateY(-50%)',
+            width: 220,
+            pointerEvents: 'none',
+            zIndex: 20,
+            userSelect: 'none',
+          }}
+        />
 
         {/* Sidebar */}
-        <aside style={{ borderRight: '1px solid var(--border)', paddingTop: 32, background: 'var(--bg-1)' }}>
+        <aside style={{ borderRight: isMobile ? 'none' : '1px solid var(--border)', borderBottom: isMobile ? '1px solid var(--border)' : 'none', paddingTop: isMobile ? 16 : 32, width: isMobile ? '100%' : 260, background: 'var(--bg-1)', position: 'relative', overflow: 'visible', flexShrink: 0 }}>
           <div style={{ padding: '0 20px 24px', borderBottom: '1px solid var(--border)', marginBottom: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{
@@ -178,7 +206,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <nav>
+          <nav style={{ display: isMobile ? 'flex' : 'block', overflowX: isMobile ? 'auto' : 'visible', whiteSpace: isMobile ? 'nowrap' : 'normal', paddingBottom: isMobile ? 8 : 0, WebkitOverflowScrolling: 'touch' }}>
             {NAV.map((n) => (
               <button key={n.id} onClick={() => setTab(n.id)} style={sidebarItemStyle(n.id)}
                 onMouseEnter={(e) => { if (tab !== n.id) (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-0)' }}
@@ -204,10 +232,11 @@ export default function Profile() {
               <LogOut size={16} style={{ opacity: 0.7 }} /> Cerrar sesión
             </button>
           </div>
+
         </aside>
 
         {/* Content */}
-        <main style={{ padding: '36px 40px', background: 'var(--bg-0)' }}>
+        <main style={{ padding: isMobile ? '24px 16px' : '36px 40px', background: 'var(--bg-0)', flex: 1, minWidth: 0 }}>
           {loadingProfile ? (
             <div style={{ display: 'grid', placeItems: 'center', height: 200 }}>
               <Loader2 size={28} style={{ color: 'var(--fg-3)', animation: 'spin 1s linear infinite' }} />
@@ -223,9 +252,9 @@ export default function Profile() {
                     <p style={{ color: 'var(--fg-2)', fontSize: 14, marginBottom: 28 }}>
                       Hola <strong style={{ color: 'var(--fg-0)' }}>{profile.full_name?.split(' ')[0] || user.email?.split('@')[0]}</strong>, bienvenido a tu cuenta.
                     </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 32 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 14, marginBottom: 32 }}>
                       {[
-                        { label: 'Alquileres activos', value: String(orders.filter(o => o.status === 'active').length || 0), color: '#4ade80' },
+                        { label: 'Alquileres activos', value: String(orders.filter(o => o.status === 'paid').length), color: '#4ade80' },
                         { label: 'Juegos deseados', value: String(ids.length), color: '#E60412' },
                         { label: 'Total pedidos', value: String(orders.length), color: '#4CC3E3' },
                       ].map((s) => (
@@ -257,11 +286,12 @@ export default function Profile() {
                         <Link to="/catalogo" className="btn-primary" style={{ textDecoration: 'none', fontSize: 14 }}>Explorar catálogo</Link>
                       </div>
                     ) : (
-                      <div style={{ display: 'grid', gap: 10 }}>
+                      <div style={{ display: 'grid', gap: 10, overflowX: 'auto', paddingBottom: 8 }}>
                         {orders.map((order) => (
                           <div key={order.id} style={{
                             display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 14, alignItems: 'center',
                             padding: 14, background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 10,
+                            minWidth: isMobile ? 400 : 'auto',
                           }}>
                             <div>
                               <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 3 }}>
@@ -274,10 +304,10 @@ export default function Profile() {
                             <span style={{
                               fontFamily: 'JetBrains Mono, monospace', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em',
                               padding: '4px 10px', borderRadius: 4,
-                              background: order.status === 'active' ? 'rgba(74,222,128,0.15)' : 'rgba(251,191,36,0.15)',
-                              color: order.status === 'active' ? '#4ade80' : '#fbbf24',
+                              background: order.status === 'paid' ? 'rgba(74,222,128,0.15)' : order.status === 'cancelled' ? 'rgba(230,4,18,0.15)' : 'rgba(251,191,36,0.15)',
+                              color: order.status === 'paid' ? '#4ade80' : order.status === 'cancelled' ? '#F14555' : '#fbbf24',
                             }}>
-                              {order.status === 'active' ? '● Activo' : '◐ Pendiente'}
+                              {order.status === 'paid' ? '● Activo' : order.status === 'cancelled' ? '✕ Cancelado' : '◐ Pendiente'}
                             </span>
                             <div style={{ fontFamily: '"Space Grotesk",sans-serif', fontWeight: 700, fontSize: 15 }}>
                               ${order.total.toLocaleString('es-AR')}
@@ -290,17 +320,53 @@ export default function Profile() {
                 )}
 
                 {/* ── DESCARGAS ── */}
-                {tab === 'downloads' && (
-                  <>
-                    <h2 style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 24 }}>Descargas</h2>
-                    <div style={{ textAlign: 'center', padding: '60px 24px', color: 'var(--fg-3)' }}>
-                      <Download size={48} strokeWidth={1} style={{ margin: '0 auto 12px' }} />
-                      <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                        No hay descargas disponibles
-                      </p>
-                    </div>
-                  </>
-                )}
+                {tab === 'downloads' && (() => {
+                  const activeItems = orders
+                    .filter(o => o.status === 'paid')
+                    .flatMap(o => o.items.map(item => ({ ...item, orderDate: o.created_at })))
+                  return (
+                    <>
+                      <h2 style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 6 }}>Descargas</h2>
+                      <p style={{ color: 'var(--fg-2)', fontSize: 14, marginBottom: 24 }}>Tus alquileres activos</p>
+                      {activeItems.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '60px 24px', color: 'var(--fg-3)' }}>
+                          <Download size={48} strokeWidth={1} style={{ margin: '0 auto 12px' }} />
+                          <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>
+                            No hay alquileres activos
+                          </p>
+                          <Link to="/catalogo" className="btn-primary" style={{ textDecoration: 'none', fontSize: 14 }}>Explorar catálogo</Link>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'grid', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
+                          {activeItems.map((item, i) => {
+                            const game = ALL_GAMES.find(g => g.id === item.gameId)
+                            if (!game) return null
+                            return (
+                              <div key={i} style={{ display: 'grid', gridTemplateColumns: '64px 1fr auto', gap: 16, alignItems: 'center', padding: 16, background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 12, minWidth: isMobile ? 440 : 'auto' }}>
+                                <img src={game.cover} alt={game.title} style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover' }} />
+                                <div>
+                                  <div style={{ fontFamily: '"Space Grotesk",sans-serif', fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{game.title}</div>
+                                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '3px 8px', borderRadius: 4, background: item.accountType === 'primary' ? 'rgba(230,4,18,0.15)' : 'rgba(76,195,227,0.15)', color: item.accountType === 'primary' ? '#F14555' : '#4CC3E3' }}>
+                                      {item.accountType === 'primary' ? 'Primaria' : 'Secundaria'}
+                                    </span>
+                                    <span style={{ fontSize: 11, color: 'var(--fg-3)', fontFamily: 'JetBrains Mono, monospace' }}>
+                                      {new Date(item.orderDate).toLocaleDateString('es-AR')}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 8px #4ade80', display: 'inline-block' }} />
+                                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Activo</span>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
 
                 {/* ── DIRECCIÓN ── */}
                 {tab === 'address' && (
@@ -396,7 +462,7 @@ export default function Profile() {
                         <Link to="/catalogo" className="btn-primary" style={{ textDecoration: 'none', fontSize: 14 }}>Volver al catálogo</Link>
                       </div>
                     ) : (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 14 }}>
                         {wishlistGames.map((g) => <GameCard key={g.id} game={g} />)}
                       </div>
                     )}
