@@ -22,7 +22,7 @@ export default function Contact() {
     }
     return () => { if (resetTimer.current) clearTimeout(resetTimer.current) }
   }, [sent])
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobile(1025)
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {

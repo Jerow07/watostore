@@ -16,7 +16,7 @@ export default function Catalog() {
   const [params, setParams] = useSearchParams()
   const [openFilters, setOpenFilters] = useState<Record<string, boolean>>({ cuenta: true, precio: true, genero: true, stock: true, consola: true })
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobile(1025)
 
   const qGenre = params.get('genero') ?? ''
   const qType = params.get('tipo') ?? ''
@@ -218,7 +218,7 @@ export default function Catalog() {
             </AnimatePresence>
 
             {/* Mobile grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
               {filtered.length === 0 ? (
                 <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '80px 24px', color: 'var(--fg-3)', fontFamily: 'JetBrains Mono, monospace', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   No encontramos juegos con esos filtros.
