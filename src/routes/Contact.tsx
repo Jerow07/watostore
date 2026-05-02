@@ -22,7 +22,8 @@ export default function Contact() {
     }
     return () => { if (resetTimer.current) clearTimeout(resetTimer.current) }
   }, [sent])
-  const isMobile = useIsMobile(1025)
+  const isTabletOrMobile = useIsMobile(1025)
+  const isStrictlyMobile = useIsMobile(768)
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
@@ -33,14 +34,14 @@ export default function Contact() {
     return () => window.removeEventListener('mousemove', onMouseMove)
   }, [])
 
-  const px = isMobile ? 16 : 48
+  const px = isTabletOrMobile ? 16 : 48
 
   return (
     <div style={{ paddingTop: 64, position: 'relative', zIndex: 1 }}>
       {/* Header */}
-      <div style={{ padding: `${isMobile ? 40 : 72}px ${px}px ${isMobile ? 28 : 60}px`, textAlign: 'center', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ padding: `${isTabletOrMobile ? 40 : 72}px ${px}px ${isTabletOrMobile ? 28 : 60}px`, textAlign: 'center', borderBottom: '1px solid var(--border)' }}>
         <p className="section-eyebrow" style={{ display: 'inline-block', marginBottom: 12 }}>CONTACTO</p>
-        <h1 style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: isMobile ? 36 : 52, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
+        <h1 style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: isTabletOrMobile ? 36 : 52, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>
           Hablemos
         </h1>
         <p style={{ color: 'var(--fg-3)', fontSize: 16, maxWidth: 440, margin: '12px auto 0', lineHeight: 1.5 }}>
@@ -49,16 +50,16 @@ export default function Contact() {
       </div>
 
       <div style={{
-        padding: `${isMobile ? 32 : 56}px ${px}px ${isMobile ? 48 : 80}px`,
+        padding: `${isTabletOrMobile ? 32 : 56}px ${px}px ${isTabletOrMobile ? 48 : 80}px`,
         maxWidth: 1200, margin: '0 auto',
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 360px 280px',
-        gap: isMobile ? 24 : 32,
+        gridTemplateColumns: isTabletOrMobile ? '1fr' : '1fr 360px 280px',
+        gap: isTabletOrMobile ? 24 : 32,
         alignItems: 'start',
       }}>
 
         {/* Form */}
-        <div style={{ background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 16, padding: isMobile ? 20 : 32, order: isMobile ? 1 : undefined }}>
+        <div style={{ background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 16, padding: isTabletOrMobile ? 20 : 32, order: isTabletOrMobile ? 1 : undefined }}>
           {sent ? (
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
               <CheckCircle size={48} style={{ color: '#4ade80', margin: '0 auto 16px' }} />
@@ -72,7 +73,7 @@ export default function Contact() {
             <>
               <h2 style={{ fontFamily: '"Space Grotesk",sans-serif', fontSize: 20, fontWeight: 700, marginBottom: 24 }}>Envianos un mensaje</h2>
               <div style={{ display: 'grid', gap: 14 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isTabletOrMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
                   <div>
                     <label style={labelStyle}>Nombre</label>
                     <input className="wato-input" placeholder="Tu nombre" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
@@ -92,7 +93,7 @@ export default function Contact() {
                 </div>
                 <a
                   className="btn-primary"
-                  style={{ width: isMobile ? '100%' : 'fit-content', justifyContent: 'center', fontSize: 14, textDecoration: 'none', pointerEvents: (!form.name || !form.email || !form.message) ? 'none' : 'auto', opacity: (!form.name || !form.email || !form.message) ? 0.5 : 1 }}
+                  style={{ width: isTabletOrMobile ? '100%' : 'fit-content', justifyContent: 'center', fontSize: 14, textDecoration: 'none', pointerEvents: (!form.name || !form.email || !form.message) ? 'none' : 'auto', opacity: (!form.name || !form.email || !form.message) ? 0.5 : 1 }}
                   href={`https://wa.me/${STORE_CONFIG.whatsapp}?text=${encodeURIComponent(`Hola! Soy ${form.name} (${form.email}).\n\nAsunto: ${form.subject || 'Consulta'}\n\n${form.message}`)}`}
                   target="_blank" rel="noreferrer"
                   onClick={() => { if (form.name && form.email && form.message) setSent(true) }}
@@ -105,12 +106,14 @@ export default function Contact() {
         </div>
 
         {/* 3D Switch */}
-        <div style={{ height: 420, position: 'relative', zIndex: 3, order: isMobile ? 3 : undefined }}>
-          <SwitchModel mouse={mouse} />
-        </div>
+        {!isStrictlyMobile && (
+          <div style={{ height: 420, position: 'relative', zIndex: 3, order: isTabletOrMobile ? 3 : undefined }}>
+            <SwitchModel mouse={mouse} />
+          </div>
+        )}
 
         {/* Contact cards */}
-        <div style={{ display: 'grid', gap: 12, alignContent: 'start', order: isMobile ? 2 : undefined }}>
+        <div style={{ display: 'grid', gap: 12, alignContent: 'start', order: isTabletOrMobile ? 2 : undefined }}>
           {[
             { icon: <MessageSquare size={20} />, title: 'WhatsApp', sub: 'Respuesta inmediata', detail: `+${STORE_CONFIG.whatsapp}`, href: `https://wa.me/${STORE_CONFIG.whatsapp}`, color: '#4CC3E3' },
             { icon: <Mail size={20} />, title: 'Email', sub: 'Respondemos en < 1h', detail: STORE_CONFIG.email, href: `mailto:${STORE_CONFIG.email}`, color: '#4CC3E3' },
