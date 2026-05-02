@@ -9,6 +9,7 @@ import { useWishlistStore } from '@/store/wishlistStore'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { useIsMobile } from '@/hooks/useBreakpoint'
+import { playSound } from '@/lib/audio'
 
 interface ProfileData {
   full_name: string
@@ -69,6 +70,11 @@ export default function Profile() {
   const ALL_GAMES = useGamesStore((s) => s.games)
   const { ids } = useWishlistStore()
   const wishlistGames = ALL_GAMES.filter((g) => ids.includes(g.id))
+
+  // Play sound on enter
+  useEffect(() => {
+    playSound('/sounds/profile-enter.mp3', 0.8)
+  }, [])
 
   // Redirect if not logged in (wait for auth to resolve first)
   useEffect(() => {

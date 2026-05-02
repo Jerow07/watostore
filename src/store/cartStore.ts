@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { playSound } from '@/lib/audio'
 
 export type AccountType = 'primary' | 'secondary'
 
@@ -47,6 +48,7 @@ export const useCartStore = create<CartStore>()(
         } else {
           set((s) => ({ items: [...s.items, { ...item, qty: 1 }] }))
         }
+        playSound('/sounds/add-to-cart.mp3', 0.8)
       },
       removeItem: (gameId, accountType) =>
         set((s) => ({

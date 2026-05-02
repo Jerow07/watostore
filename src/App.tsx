@@ -43,6 +43,25 @@ export default function App() {
     document.documentElement.classList.toggle('dark', dark)
   }, [dark])
 
+  // Play startup sound handling browser autoplay policies
+  useEffect(() => {
+    const playStartupSound = () => {
+      const audio = new Audio('/sounds/page-start.mp3')
+      audio.volume = 0.8
+      audio.play().catch(() => {
+        // Autoplay prevented, wait for first interaction
+        const playOnInteraction = () => {
+          audio.play().catch(() => {})
+          document.removeEventListener('click', playOnInteraction)
+          document.removeEventListener('keydown', playOnInteraction)
+        }
+        document.addEventListener('click', playOnInteraction)
+        document.addEventListener('keydown', playOnInteraction)
+      })
+    }
+    playStartupSound()
+  }, [])
+
   useEffect(() => { loadGames() }, [loadGames])
 
   // Scroll to top on route change
